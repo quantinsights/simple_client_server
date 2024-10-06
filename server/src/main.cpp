@@ -11,17 +11,17 @@
 int main()
 {
     int server_fd, new_socket;      // File descriptors for the server and new client connection
-    int backlog = SOMAXCONN;        // Maximum number of pending connections in listen() API
+    int backlog = 10;        // Maximum number of pending connections in listen() API
 
     struct sockaddr_in address;     // Structure to hold server's address information
     int addrlen = sizeof(address);
-    char recv_buffer[1024] = {0};   // Buffer to store received data
+    char recv_buffer[1024] = {};   // Buffer to store received data
     const char* hi = "Hey there, I am the server!";     //Message to send to the client
     
     // 1. Create a TCP Socket using IPv4 protocol (AF_INET) and stream type SOCK_STREAM
     if((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
     {
-        perror("\nFailed to create a socket to listen to!");
+        std::cout << "Failed to create socket. errno : " << errno << std::endl;
         exit(EXIT_FAILURE);
     }
 
@@ -36,7 +36,7 @@ int main()
     // 3. Bind the socket to IP address and port
     if(bind(server_fd, (struct sockaddr*) &address, sizeof(address)) < 0)
     {
-        perror("\nFailed to bind socket to IP address and port!");
+        std::cout << "\nFailed to bind to specified address and port. errno : " << errno << std::endl;
         close(server_fd);
         exit(EXIT_FAILURE);
     }
@@ -54,9 +54,10 @@ int main()
 
     // 5. Accept a connection from the client
     // This call blocks until a client connects
-    if((new_socket == accept(server_fd, (struct sockaddr*) &address, (socklen_t*) addrlen)) < 0)
+    new_socket == accept(server_fd, (struct sockaddr*) &address, (socklen_t*) addrlen);
+    if(new_socket < 0)
     {
-        perror("\nAccept failed");
+        std::cout << "Failed to accept connection from the client. errno : " << errno << std::endl;
         close(server_fd);
         exit(EXIT_FAILURE);
     }
@@ -65,10 +66,10 @@ int main()
 
     // 6. Read the data sent by the client. This example reads upto 1024 bytes.
     int valread = read(new_socket, recv_buffer, 1024);
-    printf("\nReceived: %s\n", recv_buffer);
+    std::cout << "\nReceived : " << recv_buffer;
 
     // 7. Send a message back to the client
-    send(new_socket, hi, strlen(hi), 0);
+    ssize_t send_ret = send(new_socket, hi, strlen(hi), 0);
     printf("\nI waved hi! to the client.\n");
 
 

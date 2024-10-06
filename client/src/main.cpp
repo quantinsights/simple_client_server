@@ -42,9 +42,8 @@ int main()
     }
 
     // Send 100 bytes of data to the server
-    char send_buffer[BUFFER_SIZE];
-    memset(send_buffer, 'A', BUFFER_SIZE);
-    ssize_t bytes_sent = send(client_socket, send_buffer, BUFFER_SIZE, 0);
+    std::string hi = "Hey there, this is the client trying to reach out to you.";
+    ssize_t bytes_sent = send(client_socket, hi.c_str(), hi.length(), 0);
 
     if(bytes_sent < 0)
     {
@@ -65,7 +64,7 @@ int main()
         return -1;
     }
 
-    std::cout << "Received " << bytes_received << "bytes from the server : "
+    std::cout << "Received " << bytes_received << " bytes from the server : "
               << std::string(recv_buffer, bytes_received) << "\n";
 
     // Close the socket
