@@ -16,7 +16,7 @@ int main()
     struct sockaddr_in address;     // Structure to hold server's address information
     int addrlen = sizeof(address);
     char recv_buffer[1024] = {};   // Buffer to store received data
-    const char* hi = "Hey there, I am the server!";     //Message to send to the client
+    const char* hi = "Hey there, thanks for reaching out. I am the server!";     //Message to send to the client
     
     // 1. Create a TCP Socket using IPv4 protocol (AF_INET) and stream type SOCK_STREAM
     if((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
@@ -54,7 +54,7 @@ int main()
 
     // 5. Accept a connection from the client
     // This call blocks until a client connects
-    new_socket == accept(server_fd, (struct sockaddr*) &address, (socklen_t*) addrlen);
+    new_socket = accept(server_fd, (struct sockaddr*) &address, (socklen_t*) addrlen);
     if(new_socket < 0)
     {
         std::cout << "Failed to accept connection from the client. errno : " << errno << std::endl;
@@ -65,13 +65,29 @@ int main()
     printf("\nConnection accepted.");
 
     // 6. Read the data sent by the client. This example reads upto 1024 bytes.
-    int valread = read(new_socket, recv_buffer, 1024);
-    std::cout << "\nReceived : " << recv_buffer;
+    ssize_t bytes_read = read(new_socket, recv_buffer, 1024);
+
+    if (bytes_read < 0)
+    {
+        std::cerr << "\nFailure to read() data sent by the client. errno : " << errno << std::endl;
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    std::cout << "\nReceived " << bytes_read << " bytes from the client.";
+    std::cout << "\nReceive buffer : " << recv_buffer;
 
     // 7. Send a message back to the client
     ssize_t send_ret = send(new_socket, hi, strlen(hi), 0);
-    printf("\nI waved hi! to the client.\n");
 
+    if (send_ret < 0)
+    {
+        std::cerr << "\nFailure to send() data to the client. errno : " << errno << std::endl;
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    std::cout << "\nSent " << send_ret << " bytes to the client.";
 
     // 8. Close the client socket when done.
     close(new_socket);
