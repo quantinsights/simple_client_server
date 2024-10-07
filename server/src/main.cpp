@@ -63,7 +63,7 @@ int main()
 
     // 5. Accept a connection from the client
     // This call blocks until a client connects
-    new_socket = accept(server_fd, (struct sockaddr*) &address, (socklen_t*) addrlen);
+    new_socket = accept(server_fd, (struct sockaddr*) &address, (socklen_t*) &addrlen);
     if(new_socket < 0)
     {
         std::cout << "Failed to accept connection from the client. errno : " << errno << std::endl;
