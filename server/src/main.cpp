@@ -14,7 +14,7 @@ int main()
     int backlog = 10;        // Maximum number of pending connections in listen() API
 
     struct sockaddr_in address;     // Structure to hold server's address information
-    int addrlen = sizeof(address);
+    socklen_t addrlen = sizeof(address);
     char recv_buffer[1024] = {};   // Buffer to store received data
     const char* hi = "Hey there, thanks for reaching out. I am the server!";     //Message to send to the client
     
@@ -32,6 +32,15 @@ int main()
     // Listen to all available network interfaces and specify the port number
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(PORT);     //Convert port to network byte order (big-endian)
+
+    // Set socket options to reuse the address and port
+    const int enable = 1;
+    if(setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &enable, sizeof(int)) < 0)
+    {
+        std::cerr << "\nsetsockopt(SO_REUSEADDR) failed";
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
 
     // 3. Bind the socket to IP address and port
     if(bind(server_fd, (struct sockaddr*) &address, sizeof(address)) < 0)
@@ -62,7 +71,7 @@ int main()
         exit(EXIT_FAILURE);
     }
 
-    printf("\nConnection accepted.");
+    std::cout << "\nConnection accepted.";
 
     // 6. Read the data sent by the client. This example reads upto 1024 bytes.
     ssize_t bytes_read = read(new_socket, recv_buffer, 1024);

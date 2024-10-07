@@ -15,7 +15,7 @@ int main()
     int client_socket = socket(AF_INET, SOCK_STREAM, 0);
     if(client_socket < 0)
     {
-        std::cerr << "\nFailed to create a socket";
+        std::cerr << "\nFailed to create a socket. errno : " << errno << std::endl;
         return -1;
     }
 
@@ -41,7 +41,7 @@ int main()
         return -1;
     }
 
-    // Send 100 bytes of data to the server
+    // Send a message to the server
     std::string hi = "Hey there, this is the client trying to reach out to you.";
     ssize_t bytes_sent = send(client_socket, hi.c_str(), hi.length(), 0);
 
