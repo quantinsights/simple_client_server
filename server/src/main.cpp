@@ -31,6 +31,7 @@ void receive_large_data(int client_socket)
     // Loop to receiving data until all is received or the connection is closed.
     while(true)
     {
+        std::cout << "\nWaiting for a connection...";
         bytes_received = recv(client_socket, buffer, buffer_size, 0);
 
         if(bytes_received > 0){
@@ -63,7 +64,7 @@ void receive_large_data(int client_socket)
 //Wrapper function to get errormsg from errno
 std::string get_error_message(int error_number)
 {
-    
+
 }
 
 int main()
