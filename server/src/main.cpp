@@ -5,8 +5,66 @@
 #include <unistd.h>         // For close()
 #include <arpa/inet.h>      // For socket functions and structures
 #include <sys/socket.h>
+#include <fstream>          // For file I/O
 
 #define PORT 8080
+
+/* When client sends a large amount of data
+*/
+void receive_large_data(int client_socket)
+{
+    constexpr int buffer_size = 1024;
+    char buffer[buffer_size];
+    ssize_t bytes_received {0};
+    ssize_t total_bytes_received {0};
+
+    //Open a file to write the data
+    std::ofstream output_file("received_data.txt", std::ios::out | std::ios::binary);
+
+    if(!output_file.is_open())
+    {
+        std::cerr << "\nFailed to open file for writing." << std::endl;
+        close(client_socket);
+        return;
+    }
+
+    // Loop to receiving data until all is received or the connection is closed.
+    while(true)
+    {
+        bytes_received = recv(client_socket, buffer, buffer_size, 0);
+
+        if(bytes_received > 0){
+            total_bytes_received += bytes_received;
+            std::cout << "\nReceived: " << bytes_received << " bytes, "
+                    << " total bytes: " << total_bytes_received << std::endl;
+            
+            // Write the received data to the file
+            output_file.write(buffer, bytes_received);
+        }else if(bytes_received == 0)
+        {
+            //Connection closed by the client
+            std::cout << "Connection closed by the client. Total bytes received: " << total_bytes_received << " bytes" << std::endl;
+            break;
+        }
+        else{
+            //Error occurred during recv()
+            std::cerr << "\nError in recv()!" << std::endl;
+            break;
+        }
+    }
+
+    // Close the file after receving all the data
+    output_file.close();
+
+    //Close the socket after receiving all the data
+    close(client_socket);
+}
+
+//Wrapper function to get errormsg from errno
+std::string get_error_message(int error_number)
+{
+    
+}
 
 int main()
 {
@@ -59,49 +117,27 @@ int main()
         exit(EXIT_FAILURE);
     }
 
-    printf("\nListening on port : %d\n", PORT);
+    // This while loop will handle multiple client connections (serially). accept() is a blocking
+    // call. The accept() function shall extract the first connection on the queue of pending connections, 
+    // create a new socket with the same socket type protocol and address family as the specified socket, 
+    // and allocate a new file descriptor for that socket. 
 
-    // 5. Accept a connection from the client
-    // This call blocks until a client connects
-    new_socket = accept(server_fd, (struct sockaddr*) &address, (socklen_t*) &addrlen);
-    if(new_socket < 0)
+    while(true)
     {
-        std::cout << "Failed to accept connection from the client. errno : " << errno << std::endl;
-        close(server_fd);
-        exit(EXIT_FAILURE);
+        // 5. Accept a connection from the client
+        new_socket = accept(server_fd, (struct sockaddr*) &address, (socklen_t*) &addrlen);
+        if(new_socket < 0)
+        {
+            std::cout << "Failed to accept connection from the client. errno : " << errno << std::endl;
+            close(server_fd);
+            exit(EXIT_FAILURE);
+        }
+
+        std::cout << "\nConnection accepted.";
+        //Receive large data from the client and write it to a file
+        receive_large_data(new_socket);
     }
 
-    std::cout << "\nConnection accepted.";
-
-    // 6. Read the data sent by the client. This example reads upto 1024 bytes.
-    ssize_t bytes_read = read(new_socket, recv_buffer, 1024);
-
-    if (bytes_read < 0)
-    {
-        std::cerr << "\nFailure to read() data sent by the client. errno : " << errno << std::endl;
-        close(server_fd);
-        exit(EXIT_FAILURE);
-    }
-
-    std::cout << "\nReceived " << bytes_read << " bytes from the client.";
-    std::cout << "\nReceive buffer : " << recv_buffer;
-
-    // 7. Send a message back to the client
-    ssize_t send_ret = send(new_socket, hi, strlen(hi), 0);
-
-    if (send_ret < 0)
-    {
-        std::cerr << "\nFailure to send() data to the client. errno : " << errno << std::endl;
-        close(server_fd);
-        exit(EXIT_FAILURE);
-    }
-
-    std::cout << "\nSent " << send_ret << " bytes to the client.";
-
-    // 8. Close the client socket when done.
-    close(new_socket);
-
-    // 9. CLose the server socket as well
     close(server_fd);
     return 0;
 }
